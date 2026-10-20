@@ -114,6 +114,17 @@ kbd{font-family:var(--body);font-weight:800;background:var(--bg);border:1px soli
 .opt.right::after{content:"\2713";position:absolute;right:8px;top:4px;font-family:var(--body);font-weight:800;font-size:.95rem}
 .opt.wrong::after{content:"\2717";position:absolute;right:8px;top:4px;font-family:var(--body);font-weight:800;font-size:.95rem}
 
+/* characters */
+.chars{display:flex;flex-wrap:wrap;gap:6px}
+.cbtn{border:2px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 10px;font-weight:600;font-size:.85rem;min-height:36px}
+.cbtn[aria-pressed="true"]{background:var(--pc);color:var(--dark);border-color:var(--pc)}
+.cdesc{margin:0;font-size:.8rem;color:var(--muted);min-height:2.6em}
+.abil{width:100%;border:2px dashed var(--pc);background:var(--bg);color:var(--ink);border-radius:12px;padding:9px 10px;font-weight:800;font-size:.85rem}
+.abil.on{background:var(--pc);color:var(--dark);border-style:solid}
+.abil:disabled{cursor:default;opacity:.55}
+.abil.on:disabled{opacity:1}
+.opt.gone{opacity:.12!important;pointer-events:none}
+
 /* overlay */
 .overlay{position:fixed;inset:0;background:rgba(21,19,58,.88);display:grid;place-items:center;z-index:50}
 .overlay b{font-family:var(--display);font-size:clamp(5rem,26vw,14rem);text-shadow:4px 4px 0 var(--p1),8px 8px 0 var(--p2),12px 12px 0 var(--p3)}
@@ -175,9 +186,9 @@ tr.top1 td.pn{color:var(--p2)}
   <div class="sec">
     <h2>Players</h2>
     <div class="grid3">
-      <div class="pcard" style="--pc:var(--p1)"><div class="row"><span class="tok">1</span><label for="name0">Player 1</label></div><input id="name0" maxlength="14" autocomplete="off" placeholder="Player 1"></div>
-      <div class="pcard" style="--pc:var(--p2)"><div class="row"><span class="tok">2</span><label for="name1">Player 2</label></div><input id="name1" maxlength="14" autocomplete="off" placeholder="Player 2"></div>
-      <div class="pcard" style="--pc:var(--p3)"><div class="row"><span class="tok">3</span><label for="name2">Player 3</label></div><input id="name2" maxlength="14" autocomplete="off" placeholder="Player 3"></div>
+      <div class="pcard" style="--pc:var(--p1)"><div class="row"><span class="tok">1</span><label for="name0">Player 1</label></div><input id="name0" maxlength="14" autocomplete="off" placeholder="Player 1"><div class="chars" id="chars0"></div><p class="cdesc" id="cdesc0"></p></div>
+      <div class="pcard" style="--pc:var(--p2)"><div class="row"><span class="tok">2</span><label for="name1">Player 2</label></div><input id="name1" maxlength="14" autocomplete="off" placeholder="Player 2"><div class="chars" id="chars1"></div><p class="cdesc" id="cdesc1"></p></div>
+      <div class="pcard" style="--pc:var(--p3)"><div class="row"><span class="tok">3</span><label for="name2">Player 3</label></div><input id="name2" maxlength="14" autocomplete="off" placeholder="Player 3"><div class="chars" id="chars2"></div><p class="cdesc" id="cdesc2"></p></div>
     </div>
   </div>
 
@@ -193,9 +204,10 @@ tr.top1 td.pn{color:var(--p2)}
 
   <div class="sec rules">
     <p><b>Correct</b> +10 &nbsp; <b>Fastest correct</b> +5 &nbsp; <b>3 right in a row</b> +3 more &nbsp; <b>Wrong</b> −5</p>
+    <p><b>Character ability</b> one use per game, pick it before the answer: Blaze doubles the points, Aegis blocks the penalty, Sage removes two wrong answers, Rogue steals from the leader.</p>
     <p>You get one answer per question. Nobody sees your choice until the reveal.</p>
   </div>
-  <p class="keys">Touch screen: tap in your own panel. Keyboard: Player 1 <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> · Player 2 <kbd>G</kbd><kbd>H</kbd><kbd>J</kbd><kbd>K</kbd> · Player 3 <kbd>7</kbd><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd> (keys match the four answers left to right).</p>
+  <p class="keys">Touch screen: tap in your own panel. Keyboard: Player 1 <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd> · Player 2 <kbd>G</kbd><kbd>H</kbd><kbd>J</kbd><kbd>K</kbd> · Player 3 <kbd>7</kbd><kbd>8</kbd><kbd>9</kbd><kbd>0</kbd> (keys match the four answers left to right). Ability: Player 1 <kbd>T</kbd> · Player 2 <kbd>L</kbd> · Player 3 <kbd>-</kbd>.</p>
 
   <div class="sec row">
     <button class="btn" id="startBtn">Start race</button>
@@ -261,6 +273,13 @@ var $=function(s){return document.querySelector(s)};
 var COLORS=['var(--p1)','var(--p2)','var(--p3)'];
 var DARKS=['var(--p1d)','var(--p2d)','var(--p3d)'];
 var KEYS=[['q','w','e','r'],['g','h','j','k'],['7','8','9','0']];
+var ABKEYS=['t','l','-'];
+var CHARS=[
+  {id:'blaze',emoji:'\uD83D\uDD25',name:'Blaze',abil:'Double Down',desc:'Once per game: this question counts double. A wrong answer then costs 10.'},
+  {id:'aegis',emoji:'\uD83D\uDEE1\uFE0F',name:'Aegis',abil:'Shield',desc:'Once per game: a wrong answer on this question costs nothing.'},
+  {id:'sage',emoji:'\uD83D\uDD2E',name:'Sage',abil:'50/50',desc:'Once per game: removes two wrong answers from your panel.'},
+  {id:'rogue',emoji:'\uD83D\uDDE1\uFE0F',name:'Rogue',abil:'Steal',desc:'Once per game: if you answer right, take up to 5 points from the top rival.'}
+];
 
 // ---------- storage (falls back to memory) ----------
 var mem={};
@@ -387,7 +406,7 @@ var TOPIC_ORDER=['factor','mul10','mul100','relmul','reldiv'];
 if(typeof document==='undefined')return;
 
 // ---------- state ----------
-var S={names:['','',''],topics:{factor:1,mul10:1,mul100:1,relmul:1,reldiv:1},rounds:15,secs:15,
+var S={names:['','',''],chars:[0,1,2],topics:{factor:1,mul10:1,mul100:1,relmul:1,reldiv:1},rounds:15,secs:15,
   players:[],q:0,cur:null,ans:[],times:[],phase:'setup',timer:null,qStart:0,used:{},bag:[],auto:null,prev:'setup',quitT:null};
 var saved=sget('ff-settings');
 if(saved){
@@ -395,8 +414,9 @@ if(saved){
   if(saved.topics)S.topics=saved.topics;
   if(saved.rounds)S.rounds=saved.rounds;
   if(saved.secs)S.secs=saved.secs;
+  if(saved.chars&&saved.chars.length===3&&saved.chars.every(function(c){return CHARS[c]}))S.chars=saved.chars;
 }
-function saveSettings(){sset('ff-settings',{names:S.names,topics:S.topics,rounds:S.rounds,secs:S.secs})}
+function saveSettings(){sset('ff-settings',{names:S.names,topics:S.topics,rounds:S.rounds,secs:S.secs,chars:S.chars})}
 
 // ---------- sound ----------
 var actx=null,muted=false;
@@ -439,6 +459,17 @@ function buildChips(){
     };
     tc.appendChild(b);
   });
+  for(var pi=0;pi<3;pi++){(function(i){
+    var box=$('#chars'+i),desc=$('#cdesc'+i);box.innerHTML='';
+    function setDesc(){var c=CHARS[S.chars[i]];desc.textContent=c.abil+': '+c.desc}
+    CHARS.forEach(function(c,ci){
+      var b=document.createElement('button');b.className='cbtn';b.type='button';b.textContent=c.emoji+' '+c.name;
+      b.setAttribute('aria-pressed',S.chars[i]===ci?'true':'false');
+      b.onclick=function(){S.chars[i]=ci;saveSettings();Array.prototype.forEach.call(box.children,function(x){x.setAttribute('aria-pressed','false')});b.setAttribute('aria-pressed','true');setDesc()};
+      box.appendChild(b);
+    });
+    setDesc();
+  })(pi)}
   function seg(id,vals,key,suffix){
     var c=$(id);c.innerHTML='';
     vals.forEach(function(v){
@@ -477,9 +508,9 @@ function startGame(){
   }
   var seen={};
   names=names.map(function(n){var base=n,c=2,k=n.toLowerCase();while(seen[k]){n=base+' ('+c+')';k=n.toLowerCase();c++}seen[k]=1;return n});
-  S.players=names.map(function(n){return {name:n,score:0,streak:0,best:0,correct:0}});
+  S.players=names.map(function(n,i){return {name:n,score:0,streak:0,best:0,correct:0,ch:S.chars[i],used:false,active:false}});
   S.q=0;S.used={};S.bag=[];S.cur=null;
-  buildGameUI();updateHUD();
+  buildGameUI();updateHUD();S.players.forEach(function(p,i){refreshAbil(i)});
   show('game');
   countdown(function(){nextQuestion()});
 }
@@ -490,19 +521,20 @@ function buildGameUI(){
     var lane=document.createElement('div');lane.className='lane';lane.style.setProperty('--pc',COLORS[i]);
     var ln=document.createElement('div');ln.className='lname';ln.textContent=p.name;
     var road=document.createElement('div');road.className='road';
-    var car=document.createElement('div');car.className='car';car.id='car'+i;car.textContent=i+1;
+    var car=document.createElement('div');car.className='car';car.id='car'+i;car.textContent=CHARS[p.ch].emoji;
     road.appendChild(car);lane.appendChild(ln);lane.appendChild(road);track.appendChild(lane);
 
     var pn=document.createElement('section');pn.className='panel';pn.id='panel'+i;
     pn.style.setProperty('--pc',COLORS[i]);pn.style.setProperty('--pcd',DARKS[i]);
     var h=document.createElement('div');h.className='ph';
-    var tk=document.createElement('span');tk.className='tok';tk.style.setProperty('--pc',COLORS[i]);tk.textContent=i+1;
+    var tk=document.createElement('span');tk.className='tok';tk.style.setProperty('--pc',COLORS[i]);tk.textContent=CHARS[p.ch].emoji;
     var nm=document.createElement('span');nm.className='pname';nm.textContent=p.name;
     var sc=document.createElement('span');sc.className='score';sc.id='score'+i;sc.textContent='0';
     h.appendChild(tk);h.appendChild(nm);h.appendChild(sc);
     var st=document.createElement('div');st.className='status';st.id='status'+i;
     var op=document.createElement('div');op.className='opts';op.id='opts'+i;
-    pn.appendChild(h);pn.appendChild(st);pn.appendChild(op);panels.appendChild(pn);
+    var ab=document.createElement('button');ab.type='button';ab.className='abil';ab.id='abil'+i;ab.dataset.p=i;
+    pn.appendChild(h);pn.appendChild(st);pn.appendChild(ab);pn.appendChild(op);panels.appendChild(pn);
   });
 }
 function updateHUD(){
@@ -515,6 +547,23 @@ function updateHUD(){
   $('#qcount').textContent='Question '+Math.max(1,S.q)+' / '+S.rounds;
 }
 window.addEventListener('resize',function(){if(S.players.length&&!$('#game').hidden)updateHUD()});
+
+function refreshAbil(i){
+  var p=S.players[i],b=$('#abil'+i),c=CHARS[p.ch];
+  var can=S.phase==='question'&&!p.used&&S.ans[i]===null;
+  b.disabled=!can;b.classList.toggle('on',!!p.active);
+  b.textContent=c.emoji+' '+c.abil+(p.active?' \u00b7 active':p.used?' \u00b7 used':' \u00b7 key '+ABKEYS[i].toUpperCase());
+}
+function useAbility(p){
+  var pl=S.players[p];
+  if(S.phase!=='question'||S.ans[p]!==null||pl.used)return;
+  pl.used=true;pl.active=true;tone(990,.12,'square',.05);
+  if(CHARS[pl.ch].id==='sage'){
+    var wrong=[];S.cur.choices.forEach(function(c,j){if(j!==S.cur.correct)wrong.push(j)});
+    shuffle(wrong).slice(0,2).forEach(function(j){var b=$('#opts'+p).children[j];b.disabled=true;b.classList.add('gone')});
+  }
+  refreshAbil(p);
+}
 
 function countdown(done){
   var ov=$('#overlay'),t=$('#ovText'),seq=['3','2','1','GO!'],i=0;S.phase='countdown';
@@ -536,6 +585,7 @@ function nextQuestion(){
   $('#qeq').textContent=S.cur.eq;$('#qeq').hidden=!S.cur.eq;
   $('#why').hidden=true;$('#nextBtn').hidden=true;
   S.players.forEach(function(p,i){
+    p.active=false;
     var pn=$('#panel'+i);pn.classList.remove('done');
     $('#status'+i).innerHTML='';
     var s=document.createElement('span');s.textContent='Your answer?';$('#status'+i).appendChild(s);
@@ -548,6 +598,7 @@ function nextQuestion(){
       b.appendChild(kc);b.appendChild(tx);op.appendChild(b);
     });
   });
+  S.players.forEach(function(p,i){refreshAbil(i)});
   S.qStart=performance.now();
   var fill=$('#tfill'),num=$('#tnum');fill.style.width='100%';fill.classList.remove('low');num.textContent=S.secs;
   clearInterval(S.timer);
@@ -561,10 +612,11 @@ function nextQuestion(){
 }
 function answer(p,i){
   if(S.phase!=='question'||S.ans[p]!==null)return;
+  var bt=$('#opts'+p).children[i];if(!bt||bt.disabled)return;
   S.ans[p]=i;S.times[p]=performance.now()-S.qStart;sfx('lock');
   var btns=$('#opts'+p).children;
   Array.prototype.forEach.call(btns,function(b,j){b.disabled=true;if(j===i)b.classList.add('picked')});
-  $('#panel'+p).classList.add('done');
+  $('#panel'+p).classList.add('done');refreshAbil(p);
   var st=$('#status'+p);st.innerHTML='';
   var pill=document.createElement('span');pill.className='pill lock';pill.textContent='Locked in';st.appendChild(pill);
   if(S.ans.every(function(a){return a!==null}))setTimeout(resolve,350);
@@ -575,21 +627,25 @@ function resolve(){
   var q=S.cur;
   var right=[0,1,2].filter(function(p){return S.ans[p]===q.correct}).sort(function(a,b){return S.times[a]-S.times[b]});
   var fastest=right.length?right[0]:-1;
+  var thieves=[],pills=[];
   S.players.forEach(function(pl,p){
     var st=$('#status'+p);st.innerHTML='';
     var pill=document.createElement('span');pill.className='pill';
-    var delta=0,note='';
+    var delta=0,note='',cid=CHARS[pl.ch].id,on=pl.active;
     if(S.ans[p]===null){pl.streak=0;pill.textContent='No answer · 0'}
     else if(S.ans[p]===q.correct){
       delta=10;pl.streak++;pl.correct++;pl.best=Math.max(pl.best,pl.streak);
       if(p===fastest){delta+=5;note=' · fastest'}
       if(pl.streak>=3){delta+=3;note+=' · streak'}
+      if(on&&cid==='blaze'){delta*=2;note+=' \u00b7 x2'}
+      if(on&&cid==='rogue')thieves.push(p);
       pill.className='pill ok';pill.textContent='+'+delta+note;
     }else{
-      delta=-Math.min(5,pl.score);pl.streak=0;
-      pill.className='pill no';pill.textContent=delta===0?'Wrong · 0':'Wrong · '+delta;
+      delta=-Math.min(on&&cid==='blaze'?10:5,pl.score);pl.streak=0;
+      if(on&&cid==='aegis')delta=0;
+      pill.className='pill no';pill.textContent=on&&cid==='aegis'?'Wrong \u00b7 shielded':delta===0?'Wrong · 0':'Wrong · '+delta;
     }
-    pl.score+=delta;st.appendChild(pill);
+    pl.score+=delta;st.appendChild(pill);pills[p]=pill;
     var btns=$('#opts'+p).children;
     Array.prototype.forEach.call(btns,function(b,j){
       b.disabled=true;
@@ -598,6 +654,12 @@ function resolve(){
     });
     $('#panel'+p).classList.add('done');
   });
+  thieves.forEach(function(t){
+    var v=-1;S.players.forEach(function(o,k){if(k!==t&&(v<0||o.score>S.players[v].score))v=k});
+    var amt=Math.min(5,S.players[v].score);
+    if(amt>0){S.players[v].score-=amt;S.players[t].score+=amt;pills[t].textContent+=' \u00b7 stole '+amt+' from '+S.players[v].name}
+  });
+  S.players.forEach(function(pl,p){refreshAbil(p)});
   if(right.length)sfx('ok');else sfx('no');
   updateHUD();
   var why=$('#why');why.innerHTML='';
@@ -608,6 +670,7 @@ function resolve(){
 }
 $('#nextBtn').onclick=function(){if(S.phase==='reveal')nextQuestion()};
 $('#panels').addEventListener('click',function(e){
+  var a=e.target.closest('.abil');if(a){useAbility(+a.dataset.p);return}
   var b=e.target.closest('.opt');if(!b)return;
   answer(+b.dataset.p,+b.dataset.i);
 });
@@ -616,6 +679,7 @@ document.addEventListener('keydown',function(e){
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   var k=e.key.toLowerCase();
   if(S.phase==='question'){
+    for(var a=0;a<3;a++){if(k===ABKEYS[a]){e.preventDefault();useAbility(a);return}}
     for(var p=0;p<3;p++){var i=KEYS[p].indexOf(k);if(i>-1){e.preventDefault();answer(p,i);return}}
   }else if(S.phase==='reveal'&&(k===' '||k==='enter')){
     e.preventDefault();nextQuestion();
@@ -661,7 +725,7 @@ function finish(){
     var sc=document.createElement('span');sc.className='sscore';sc.textContent=o.p.score;line.appendChild(sc);
     var bar=document.createElement('div');bar.className='sbar';var bi=document.createElement('i');bi.style.width=Math.max(2,o.p.score/max*100)+'%';bar.appendChild(bi);
     var meta=document.createElement('div');meta.className='smeta';
-    meta.textContent=o.p.correct+' of '+S.rounds+' correct · best streak '+o.p.best;
+    meta.textContent=CHARS[o.p.ch].emoji+' '+CHARS[o.p.ch].name+' \u00b7 '+o.p.correct+' of '+S.rounds+' correct · best streak '+o.p.best;
     info.appendChild(line);info.appendChild(bar);info.appendChild(meta);
     row.appendChild(rk);row.appendChild(info);box.appendChild(row);
   });
