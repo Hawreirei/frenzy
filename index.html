@@ -441,25 +441,66 @@ function gRelDiv(){
   var r=mk(ans,[q,q*10,q*100,d,d*10,ans*10,ans/10],true);
   return {lead:know+' Use it to work out',eq:eq+' = ?',choices:r.choices,correct:r.correct,hint:hint};
 }
+function split2(n){return {t:Math.floor(n/10)*10,o:n%10}}
+function gPartMul(){
+  var n=pick([rnd(12,29),rnd(12,98),rnd(31,98)]),k=rnd(3,9);while(n%10===0)n=rnd(12,98);
+  var d=split2(n),ans=n*k,a=d.t*k,b=d.o*k;
+  var m=mk(ans,[a,b,ans+10,ans-10,ans+k,ans-k,a+d.o],true);
+  return {lead:'Partition the number, multiply each part, then add',eq:n+' × '+k+' = ('+d.t+' × '+k+') + ('+d.o+' × '+k+') = ?',choices:m.choices,correct:m.correct,
+    hint:d.t+' × '+k+' = '+a+' and '+d.o+' × '+k+' = '+b+'. Then '+a+' + '+b+' = '+ans+'.'};
+}
+function gMissingPartial(){
+  var n=rnd(12,98),k=rnd(3,9);while(n%10===0)n=rnd(12,98);
+  var d=split2(n),a=d.t*k,b=d.o*k,ans=n*k;
+  if(Math.random()<0.5){
+    var m=mk(b,[d.o,d.t,a,b+k,b-k,ans],true);
+    return {lead:'Find the missing partial product',eq:n+' × '+k+' = '+a+' + ?',choices:m.choices,correct:m.correct,
+      hint:n+' is '+d.t+' + '+d.o+'. The tens part is '+d.t+' × '+k+' = '+a+', so the missing part is '+d.o+' × '+k+' = '+b+'.'};
+  }
+  var m2=mk(a,[d.t,d.o*k+k,b,a+10*k,a-10*k,ans],true);
+  return {lead:'Find the missing partial product',eq:n+' × '+k+' = ? + '+b,choices:m2.choices,correct:m2.correct,
+    hint:n+' is '+d.t+' + '+d.o+'. The ones part is '+d.o+' × '+k+' = '+b+', so the missing part is '+d.t+' × '+k+' = '+a+'.'};
+}
+function gGrid3(){
+  var h=rnd(1,5),t=rnd(1,9),o=rnd(1,9),k=rnd(2,6),n=h*100+t*10+o,ans=n*k;
+  var m=mk(ans,[h*100*k,ans+10,ans-10,ans+100,ans-100,ans+k,ans-k],true);
+  return {lead:'Add the partial products',eq:(h*100)+' × '+k+' + '+(t*10)+' × '+k+' + '+o+' × '+k+' = ?',choices:m.choices,correct:m.correct,
+    hint:(h*100*k)+' + '+(t*10*k)+' + '+(o*k)+' = '+ans+', which is '+n+' × '+k+'.'};
+}
+function gPartChoice(){
+  var n=rnd(12,98),k=rnd(3,9);while(n%10===0)n=rnd(12,98);
+  var d=split2(n),good='('+d.t+' × '+k+') + ('+d.o+' × '+k+')';
+  var pool=['('+(d.t/10)+' × '+k+') + ('+d.o+' × '+k+')','('+d.t+' × '+k+') + '+d.o,'('+d.t+' × '+d.o+') + ('+k+' × '+k+')','('+d.t+' + '+k+') × ('+d.o+' + '+k+')','('+d.t+' × '+k+') × ('+d.o+' × '+k+')'];
+  var m=mk(good,pool,false);
+  return {lead:'Which is a correct way to work out',eq:n+' × '+k,choices:m.choices,correct:m.correct,
+    hint:n+' = '+d.t+' + '+d.o+', so '+n+' × '+k+' = ('+d.t+' × '+k+') + ('+d.o+' × '+k+') = '+(n*k)+'.'};
+}
+function gTwoDigit(){
+  var n=rnd(12,39),x=rnd(2,6),mm=10+x,ans=n*mm;
+  var m=mk(ans,[n*10,n*x,ans+10,ans-10,ans+n,ans-n,n*mm+x],true);
+  return {lead:'Multiply by 10, multiply by '+x+', then add',eq:n+' × '+mm+' = ('+n+' × 10) + ('+n+' × '+x+') = ?',choices:m.choices,correct:m.correct,
+    hint:n+' × 10 = '+(n*10)+' and '+n+' × '+x+' = '+(n*x)+'. Then '+(n*10)+' + '+(n*x)+' = '+ans+'.'};
+}
 var TOPICS={
   factor:{label:'Factor pairs',gens:[gFactorPair,gNotFactor,gCountPairs,gMissingFactor]},
   mul10:{label:'× ÷ by 10',gens:[gMulMix10]},
   mul100:{label:'× ÷ by 100',gens:[gMulMix100]},
   relmul:{label:'Related facts ×',gens:[gRelMul]},
-  reldiv:{label:'Related facts ÷',gens:[gRelDiv]}
+  reldiv:{label:'Related facts ÷',gens:[gRelDiv]},
+  muladd:{label:'Multiply & add',gens:[gPartMul,gMissingPartial,gGrid3,gPartChoice,gTwoDigit]}
 };
-var TOPIC_ORDER=['factor','mul10','mul100','relmul','reldiv'];
+var TOPIC_ORDER=['factor','mul10','mul100','relmul','reldiv','muladd'];
 // ==ENDGEN==
 
 if(typeof document==='undefined')return;
 
 // ---------- state ----------
-var S={np:3,names:['','',''],chars:[0,1,2],topics:{factor:1,mul10:1,mul100:1,relmul:1,reldiv:1},rounds:15,secs:15,
+var S={np:3,names:['','',''],chars:[0,1,2],topics:{factor:1,mul10:1,mul100:1,relmul:1,reldiv:1,muladd:1},rounds:15,secs:15,
   players:[],q:0,cur:null,ans:[],times:[],phase:'setup',timer:null,qStart:0,used:{},bag:[],auto:null,prev:'setup',quitT:null};
 var saved=sget('ff-settings');
 if(saved){
   if(saved.names)S.names=saved.names;
-  if(saved.topics)S.topics=saved.topics;
+  if(saved.topics)Object.keys(saved.topics).forEach(function(k){S.topics[k]=saved.topics[k]});
   if(saved.rounds)S.rounds=saved.rounds;
   if(saved.secs)S.secs=saved.secs;
   if(saved.np===2||saved.np===3)S.np=saved.np;
